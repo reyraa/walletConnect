@@ -95,6 +95,14 @@ export function isSolanaChain(chain: string) {
 }
 
 /**
+ * Check if chain is part of LISK standard
+ * @todo this is a mock
+ */
+ export function isLiskChain(chain: string) {
+  return chain.includes('lisk')
+}
+
+/**
  * Formats chainId to its name
  */
 export function formatChainName(chainId: string) {

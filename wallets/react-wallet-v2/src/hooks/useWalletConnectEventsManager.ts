@@ -1,6 +1,7 @@
 import { COSMOS_SIGNING_METHODS } from '@/data/COSMOSData'
 import { EIP155_SIGNING_METHODS } from '@/data/EIP155Data'
 import { SOLANA_SIGNING_METHODS } from '@/data/SolanaData'
+import { LISK_SIGNING_METHODS } from '@/data/LiskData'
 import ModalStore from '@/store/ModalStore'
 import { signClient } from '@/utils/WalletConnectUtil'
 import { SignClientTypes } from '@walletconnect/types'
@@ -48,6 +49,10 @@ export default function useWalletConnectEventsManager(initialized: boolean) {
         case SOLANA_SIGNING_METHODS.SOLANA_SIGN_MESSAGE:
         case SOLANA_SIGNING_METHODS.SOLANA_SIGN_TRANSACTION:
           return ModalStore.open('SessionSignSolanaModal', { requestEvent, requestSession })
+
+        case LISK_SIGNING_METHODS.LISK_SIGN_MESSAGE:
+        case LISK_SIGNING_METHODS.LISK_SIGN_TRANSACTION:
+          return ModalStore.open('SessionSignLiskModal', { requestEvent, requestSession })
 
         default:
           return ModalStore.open('SessionUnsuportedMethodModal', { requestEvent, requestSession })

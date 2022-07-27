@@ -5,8 +5,9 @@ import SessionProposalChainCard from '@/components/SessionProposalChainCard'
 import ModalStore from '@/store/ModalStore'
 import { cosmosAddresses } from '@/utils/CosmosWalletUtil'
 import { eip155Addresses } from '@/utils/EIP155WalletUtil'
-import { isCosmosChain, isEIP155Chain, isSolanaChain } from '@/utils/HelperUtil'
+import { isCosmosChain, isEIP155Chain, isSolanaChain, isLiskChain } from '@/utils/HelperUtil'
 import { solanaAddresses } from '@/utils/SolanaWalletUtil'
+import { liskAddresses } from '@/utils/LiskWalletUtil'
 import { signClient } from '@/utils/WalletConnectUtil'
 import { Button, Divider, Modal, Text } from '@nextui-org/react'
 import { SessionTypes } from '@walletconnect/types'
@@ -112,8 +113,19 @@ export default function SessionProposalModal() {
           chain={chain}
         />
       )
+    } else if (isLiskChain(chain)) {
+      return (
+        <ProposalSelectSection
+          addresses={liskAddresses}
+          selectedAddresses={selectedAccounts[chain]}
+          onSelect={onSelectAccount}
+          chain={chain}
+        />
+      )
     }
   }
+
+  console.log('requiredNamespaces', Object.keys(requiredNamespaces).map(chain => requiredNamespaces[chain]));
 
   return (
     <Fragment>
