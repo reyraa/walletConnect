@@ -11,6 +11,7 @@ import {
   DEFAULT_EIP155_METHODS,
   DEFAULT_MAIN_CHAINS,
   DEFAULT_SOLANA_METHODS,
+  DEFAULT_LISK_METHODS,
   DEFAULT_TEST_CHAINS,
 } from "./constants";
 import { AccountAction, setLocaleStorageTestnetFlag } from "./helpers";
@@ -61,6 +62,7 @@ export default function App() {
     ethereumRpc,
     cosmosRpc,
     solanaRpc,
+    liskRpc,
     isRpcRequestPending,
     rpcResult,
     isTestnet,
@@ -155,6 +157,21 @@ export default function App() {
     ];
   };
 
+  const getLiskActions = (): AccountAction[] => {
+    const onSignTransaction = async (chainId: string, address: string) => {
+      openRequestModal();
+      await liskRpc.testSignTransaction(chainId, address);
+    };
+    const onSignMessage = async (chainId: string, address: string) => {
+      openRequestModal();
+      await liskRpc.testSignMessage(chainId, address);
+    };
+    return [
+      { method: DEFAULT_LISK_METHODS.LSK_SIGN_TRANSACTION, callback: onSignTransaction },
+      { method: DEFAULT_LISK_METHODS.LSK_SIGN_MESSAGE, callback: onSignMessage },
+    ];
+  };
+
   const getBlockchainActions = (chainId: string) => {
     const [namespace] = chainId.split(":");
     switch (namespace) {
@@ -164,6 +181,8 @@ export default function App() {
         return getCosmosActions();
       case "solana":
         return getSolanaActions();
+      case "lisk":
+        return getLiskActions();
       default:
         break;
     }

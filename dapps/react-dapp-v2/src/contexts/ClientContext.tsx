@@ -36,6 +36,7 @@ interface IContext {
   pairings: PairingTypes.Struct[];
   accounts: string[];
   solanaPublicKeys?: Record<string, PublicKey>;
+  liskPublicKeys?: Record<string, PublicKey>;
   balances: AccountBalances;
   isFetchingBalances: boolean;
   setChains: any;
@@ -60,6 +61,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
   const [balances, setBalances] = useState<AccountBalances>({});
   const [accounts, setAccounts] = useState<string[]>([]);
   const [solanaPublicKeys, setSolanaPublicKeys] = useState<Record<string, PublicKey>>();
+  const [liskPublicKeys, setLiskPublicKeys] = useState<Record<string, PublicKey>>();
   const [chains, setChains] = useState<string[]>([]);
 
   const reset = () => {
@@ -103,6 +105,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
     setChains(allNamespaceChains);
     setAccounts(allNamespaceAccounts);
     setSolanaPublicKeys(getPublicKeysFromAccounts(allNamespaceAccounts));
+    setLiskPublicKeys(getPublicKeysFromAccounts(allNamespaceAccounts));
     await getAccountBalances(allNamespaceAccounts);
   }, []);
 
@@ -247,6 +250,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       isFetchingBalances,
       accounts,
       solanaPublicKeys,
+      liskPublicKeys,
       chains,
       client,
       session,
@@ -261,6 +265,7 @@ export function ClientContextProvider({ children }: { children: ReactNode | Reac
       isFetchingBalances,
       accounts,
       solanaPublicKeys,
+      liskPublicKeys,
       chains,
       client,
       session,

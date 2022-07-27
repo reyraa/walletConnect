@@ -1,4 +1,5 @@
 import { BigNumber, utils } from "ethers";
+import { cryptography } from '@liskhq/lisk-client';
 import { createContext, ReactNode, useContext, useState } from "react";
 import * as encoding from "@walletconnect/encoding";
 import { TypedDataField } from "@ethersproject/abstract-signer";
@@ -25,6 +26,7 @@ import {
   DEFAULT_COSMOS_METHODS,
   DEFAULT_EIP155_METHODS,
   DEFAULT_SOLANA_METHODS,
+  DEFAULT_LISK_METHODS,
 } from "../constants";
 import { useChainData } from "./ChainDataContext";
 
@@ -57,6 +59,10 @@ interface IContext {
     testSignMessage: TRpcRequestCallback;
     testSignTransaction: TRpcRequestCallback;
   };
+  liskRpc: {
+    testSignMessage: TRpcRequestCallback;
+    testSignTransaction: TRpcRequestCallback;
+  };
   rpcResult?: IFormattedRpcResponse | null;
   isRpcRequestPending: boolean;
   isTestnet: boolean;
@@ -76,7 +82,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
   const [result, setResult] = useState<IFormattedRpcResponse | null>();
   const [isTestnet, setIsTestnet] = useState(getLocalStorageTestnetFlag());
 
-  const { client, session, accounts, balances, solanaPublicKeys } = useWalletConnectClient();
+  const { client, session, accounts, balances, solanaPublicKeys, liskPublicKeys } = useWalletConnectClient();
 
   const { chainData } = useChainData();
 
@@ -539,6 +545,99 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
     ),
   };
 
+  // -------- LISK RPC METHODS --------
+
+  const liskRpc = {
+    testSignTransaction: _createJsonRpcRequestHandler(
+      async (chainId: string, address: string): Promise<IFormattedRpcResponse> => {
+        console.log('testSignTransaction accounts', accounts);
+        if (!liskPublicKeys) {
+          throw new Error("Could not find Lisk PublicKeys.");
+        }
+
+        // @todo we need to have the public key of account here. Just need to update the connection response.
+        // const senderPublicKey = liskPublicKeys.find(item => item.includes(address));
+        // Also, we should serialize and send the tx bytes instead of a raw tx object
+        const rawTx = {
+          moduleID: 2,
+          assetID: 0,
+          nonce: '0',
+          fee: '20000',
+          senderAddress: address,
+          asset: {
+            recipientAddress: address,
+            data: 'Testing connection',
+            amount: '100000000'
+          }
+        };
+
+        try {
+          const result = await client!.request<{ signature: string }>({
+            chainId,
+            topic: session!.topic,
+            request: {
+              method: DEFAULT_LISK_METHODS.LSK_SIGN_TRANSACTION,
+              params: {
+                rawTx,
+                networkIdentifier: '15f0dacc1060e91818224a94286b13aa04279c640bd5d6f193182031d133df7c',
+              },
+            },
+          });
+
+          // @todo verify the signatures
+          const valid = true;
+
+          return {
+            method: DEFAULT_SOLANA_METHODS.SOL_SIGN_TRANSACTION,
+            address,
+            valid,
+            result: result.signature,
+          };
+        } catch (error: any) {
+          throw new Error(error);
+        }
+      },
+    ),
+    testSignMessage: _createJsonRpcRequestHandler(
+      async (chainId: string, address: string): Promise<IFormattedRpcResponse> => {
+        // Encode message to `UInt8Array` first via `TextEncoder` so we can pass it to `bs58.encode`.
+        const message = bs58.encode(
+          new TextEncoder().encode(`This is an example message to be signed - ${Date.now()}`),
+        );
+
+        try {
+          const result = await client!.request<{ signature: string }>({
+            chainId,
+            topic: session!.topic,
+            request: {
+              method: DEFAULT_LISK_METHODS.LSK_SIGN_MESSAGE,
+              params: {
+                address: address,
+                message,
+              },
+            },
+          });
+
+          // const valid = verifyMessageSignature(
+          //   senderPublicKey.toBase58(),
+          //   result.signature,
+          //   message,
+          // );
+          const valid = true; // @todo fix the validator
+
+          return {
+            method: DEFAULT_LISK_METHODS.LSK_SIGN_MESSAGE,
+            address,
+            valid,
+            result: result.signature,
+          };
+        } catch (error: any) {
+          throw new Error(error);
+        }
+      },
+    ),
+  };
+
   return (
     <JsonRpcContext.Provider
       value={{
@@ -546,6 +645,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
         ethereumRpc,
         cosmosRpc,
         solanaRpc,
+        liskRpc,
         rpcResult: result,
         isRpcRequestPending: pending,
         isTestnet,
