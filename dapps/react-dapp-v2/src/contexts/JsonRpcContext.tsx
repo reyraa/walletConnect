@@ -1,5 +1,5 @@
 import { BigNumber, utils } from "ethers";
-import { cryptography } from '@liskhq/lisk-client';
+import { transactions, codec, cryptography } from '@liskhq/lisk-client';
 import { createContext, ReactNode, useContext, useState } from "react";
 import * as encoding from "@walletconnect/encoding";
 import { TypedDataField } from "@ethersproject/abstract-signer";
@@ -29,6 +29,81 @@ import {
   DEFAULT_LISK_METHODS,
 } from "../constants";
 import { useChainData } from "./ChainDataContext";
+
+const baseTransactionSchema = {
+  $id: '/lisk/baseTransaction',
+  type: 'object',
+  required: ['module', 'command', 'nonce', 'fee', 'senderPublicKey', 'params'],
+  properties: {
+    module: {
+      dataType: 'string',
+      fieldNumber: 1,
+    },
+    command: {
+      dataType: 'string',
+      fieldNumber: 2,
+    },
+    nonce: {
+      dataType: 'uint64',
+      fieldNumber: 3,
+    },
+    fee: {
+      dataType: 'uint64',
+      fieldNumber: 4,
+    },
+    senderPublicKey: {
+      dataType: 'bytes',
+      fieldNumber: 5,
+    },
+    params: {
+      dataType: 'bytes',
+      fieldNumber: 6,
+    },
+    signatures: {
+      type: 'array',
+      items: {
+        dataType: 'bytes',
+      },
+      fieldNumber: 7,
+    },
+  },
+};
+
+const encodeTransaction = (tx: any, paramsSchema: any) => {
+  let encodedParams;
+  if (!Buffer.isBuffer(tx.params)) {
+    encodedParams = paramsSchema ? codec.codec.encode(paramsSchema, tx.params) : Buffer.alloc(0);
+  } else {
+    encodedParams = tx.params;
+  }
+
+  const encodedTransaction = codec.codec.encode(baseTransactionSchema, {
+    ...tx,
+    params: encodedParams,
+  });
+
+  return encodedTransaction;
+};
+
+const fromTransactionJSON = (rawTx: any, paramsSchema: any) => {
+  const tx = codec.codec.fromJSON(baseTransactionSchema, {
+    ...rawTx,
+    params: '',
+  });
+  let params;
+  if (typeof rawTx.params === 'string') {
+    params = paramsSchema ? codec.codec.decode(paramsSchema, Buffer.from(rawTx.params, 'hex')) : {};
+  } else {
+    params = paramsSchema ? codec.codec.fromJSON(paramsSchema, rawTx.params) : {};
+    console.log('params', rawTx.params, params);
+  }
+
+  return {
+    ...tx,
+    id: rawTx.id ? Buffer.from(rawTx.id, 'hex') : Buffer.alloc(0),
+    params,
+  };
+};
 
 /**
  * Types
@@ -555,43 +630,90 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
           throw new Error("Could not find Lisk PublicKeys.");
         }
 
-        // @todo we need to have the public key of account here. Just need to update the connection response.
-        // const senderPublicKey = liskPublicKeys.find(item => item.includes(address));
-        // Also, we should serialize and send the tx bytes instead of a raw tx object
-        const rawTx = {
-          moduleID: 2,
-          assetID: 0,
-          nonce: '0',
-          fee: '20000',
-          senderAddress: address,
-          asset: {
-            recipientAddress: address,
-            data: 'Testing connection',
-            amount: '100000000'
+        const schema = {
+          "$id": "/lisk/transferParams",
+          "title": "Transfer transaction params",
+          "type": "object",
+          "required": [
+            "tokenID",
+            "amount",
+            "recipientAddress",
+            "data"
+          ],
+          "properties": {
+            "tokenID": {
+              "dataType": "bytes",
+              "fieldNumber": 1,
+              "minLength": 8,
+              "maxLength": 8
+            },
+            "amount": {
+              "dataType": "uint64",
+              "fieldNumber": 2
+            },
+            "recipientAddress": {
+              "dataType": "bytes",
+              "fieldNumber": 3,
+              "format": "lisk32"
+            },
+            "data": {
+              "dataType": "string",
+              "fieldNumber": 4,
+              "minLength": 0,
+              "maxLength": 64
+            }
           }
         };
 
+        // @todo we need to have the public key of account here. Just need to update the connection response.
+        // const senderPublicKey = liskPublicKeys.find(item => item.includes(address));
+        // Also, we should serialize and send the tx bytes instead of a raw tx object
+
+        const recipientAddress = cryptography.address.getAddressFromLisk32Address('lsk3ay4z7wqjczbo5ogcqxgxx23xyacxmycwxfh4d')
+        console.log('recipientAddress', recipientAddress, recipientAddress.toString('hex'));
+        const rawTx = {
+          module: 'token',
+          command: 'transfer',
+          fee: '100000000',
+          nonce: '1',
+          senderPublicKey: 'cf434a889d6c7a064e8de61bb01759a76f585e5ff45a78ba8126ca332601f535',
+          signatures: [],
+          params: {
+            amount: '1000000000000',
+            data: '',
+            recipientAddress: 'lskj34x8zh85zh4khjq64ofudmjax2hzc5hxw7vok',
+            tokenID: '0000000000000000'
+          },
+          id: '3d49adde25a12ca34c5893f645ceed395220d1a936e46b9412a2bb77b68e3583',
+        };
+
+        const tx = fromTransactionJSON(rawTx, schema);
+        const binary = encodeTransaction(tx, schema);
+        const payload = binary.toString('hex');
+
         try {
-          const result = await client!.request<{ signature: string }>({
+          const result = await client!.request<string>({
             chainId,
             topic: session!.topic,
             request: {
               method: DEFAULT_LISK_METHODS.LSK_SIGN_TRANSACTION,
               params: {
-                rawTx,
-                networkIdentifier: '15f0dacc1060e91818224a94286b13aa04279c640bd5d6f193182031d133df7c',
+                payload,
+                schema,
+                recipientChainID: '10000000',
               },
             },
           });
 
           // @todo verify the signatures
           const valid = true;
+          console.log('result', result);
 
           return {
-            method: DEFAULT_SOLANA_METHODS.SOL_SIGN_TRANSACTION,
+            method: DEFAULT_LISK_METHODS.LSK_SIGN_TRANSACTION,
             address,
             valid,
-            result: result.signature,
+            result,
           };
         } catch (error: any) {
           throw new Error(error);

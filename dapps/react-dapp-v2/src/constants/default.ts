@@ -8,7 +8,7 @@ export const DEFAULT_MAIN_CHAINS = [
   "eip155:42220",
   "cosmos:cosmoshub-4",
   "solana:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ",
-  "lisk:4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ",
+  "lisk:10000001",
 ];
 
 export const DEFAULT_TEST_CHAINS = [
@@ -19,7 +19,7 @@ export const DEFAULT_TEST_CHAINS = [
   "eip155:421611",
   "eip155:44787",
   "solana:8E9rvCKLFQia2Y35HXjjpWzj8weVo44K",
-  "lisk:8E9rvCKLFQia2Y35HXjjpWzj8weVo44K",
+  "lisk:10000000",
 ];
 
 export const DEFAULT_CHAINS = [...DEFAULT_MAIN_CHAINS, ...DEFAULT_TEST_CHAINS];
@@ -75,8 +75,8 @@ export enum DEFAULT_SOLANA_METHODS {
  * LI|SK
  */
  export enum DEFAULT_LISK_METHODS {
-  LSK_SIGN_TRANSACTION = "lisk_signTransaction",
-  LSK_SIGN_MESSAGE = "lisk_signMessage",
+  LSK_SIGN_TRANSACTION = "sign_transaction",
+  LSK_SIGN_MESSAGE = "sign_message",
 }
 
 export enum DEFAULT_SOLANA_EVENTS {}

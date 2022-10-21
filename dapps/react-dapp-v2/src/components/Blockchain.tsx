@@ -108,7 +108,6 @@ function getBlockchainDisplayData(
   } catch (e) {
     return undefined;
   }
-  console.log('->', chainData, namespace, reference);
   const data: ChainData = chainData[namespace][reference];
   if (typeof data === "undefined") return undefined;
   return { data, meta };
