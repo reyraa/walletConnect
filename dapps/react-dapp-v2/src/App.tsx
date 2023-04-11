@@ -251,6 +251,7 @@ export default function App() {
         <h3>Accounts</h3>
         <SAccounts>
           {accounts.map(account => {
+            console.log('accounts', accounts);
             const [namespace, reference, address] = account.split(":");
             const chainId = `${namespace}:${reference}`;
             return (

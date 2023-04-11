@@ -682,7 +682,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
             amount: '1000000000000',
             data: '',
             recipientAddress: 'lskj34x8zh85zh4khjq64ofudmjax2hzc5hxw7vok',
-            tokenID: '0000000000000000'
+            tokenID: '0400000000000000'
           },
           id: '3d49adde25a12ca34c5893f645ceed395220d1a936e46b9412a2bb77b68e3583',
         };
@@ -700,7 +700,7 @@ export function JsonRpcContextProvider({ children }: { children: ReactNode | Rea
               params: {
                 payload,
                 schema,
-                recipientChainID: '10000000',
+                recipientChainID: '04000000',
               },
             },
           });
